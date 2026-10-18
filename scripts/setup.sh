@@ -9,10 +9,11 @@ if [[ ! -f .env ]]; then
   cp .env.example .env
   echo "→ .env aus .env.example angelegt"
 fi
-for var in WEBHOOK_API_KEY N8N_ENCRYPTION_KEY DB_PASSWORD BRIDGE_TOKEN; do
+for var in WEBHOOK_API_KEY N8N_ENCRYPTION_KEY DB_PASSWORD BRIDGE_TOKEN N8N_OWNER_PASSWORD; do
   if grep -q "^${var}=$" .env; then
-    sed -i '' "s|^${var}=$|${var}=$(openssl rand -hex 24)|" .env 2>/dev/null \
-      || sed -i "s|^${var}=$|${var}=$(openssl rand -hex 24)|" .env
+    value="Fb$(openssl rand -hex 24)"   # Präfix: n8n verlangt im Passwort einen Großbuchstaben
+    sed -i '' "s|^${var}=$|${var}=${value}|" .env 2>/dev/null \
+      || sed -i "s|^${var}=$|${var}=${value}|" .env
     echo "→ ${var} erzeugt"
   fi
 done
@@ -82,10 +83,18 @@ echo -n "→ warte auf n8n"
 until curl -fs http://localhost:5678/healthz >/dev/null 2>&1; do echo -n "."; sleep 2; done
 echo " ok"
 
+# 6) Owner-Account für den Editor anlegen, falls es noch keinen gibt
+if curl -fs http://localhost:5678/rest/settings | jq -e '.data.userManagement.showSetupOnFirstLoad' >/dev/null; then
+  jq -n --arg email "${N8N_OWNER_EMAIL:-owner@example.com}" --arg pw "$N8N_OWNER_PASSWORD" \
+    '{email: $email, firstName: "Feedback", lastName: "Triage", password: $pw}' \
+    | curl -fs -X POST http://localhost:5678/rest/owner/setup -H 'Content-Type: application/json' -d @- >/dev/null \
+    && echo "→ Owner-Account angelegt (${N8N_OWNER_EMAIL}, Passwort in .env)"
+fi
+
 cat <<EOF
 
 Fertig.
-  Editor:     http://localhost:5678  (beim ersten Öffnen Owner-Account anlegen)
+  Editor:     http://localhost:5678  (Login: N8N_OWNER_EMAIL / N8N_OWNER_PASSWORD aus .env)
   Intake:     POST http://localhost:5678/webhook/feedback-intake
   Statistik:  GET  http://localhost:5678/webhook/feedback-stats?days=7
   Header:     X-Api-Key: \$WEBHOOK_API_KEY (steht in .env)
