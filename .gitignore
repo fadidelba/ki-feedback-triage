@@ -1,0 +1,6 @@
+.env
+.DS_Store
+*.local.json
+.bridge.pid
+.bridge.log
+STAND.md

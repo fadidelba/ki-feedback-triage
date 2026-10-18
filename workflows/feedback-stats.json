@@ -1,0 +1,100 @@
+{
+  "id": "fbTriageStats001",
+  "name": "feedback-stats",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "feedback-stats",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        300
+      ],
+      "id": "webhook",
+      "webhookId": "feedback-stats",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fbCredWebhook001",
+          "name": "Webhook X-Api-Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "with recent as (\n  select * from feedback\n  where received_at > now() - make_interval(days => $1::int)\n),\nby_category as (\n  select category, count(*) as anzahl from recent group by category\n),\nby_priority as (\n  select priority, count(*) as anzahl from recent group by priority\n),\nby_category_priority as (\n  select category, priority, count(*) as anzahl from recent group by category, priority\n),\nper_day as (\n  select date_trunc('day', received_at)::date as tag, count(*) as anzahl from recent group by 1\n)\nselect json_build_object(\n  'zeitraum_tage',         $1::int,\n  'gesamt',                (select count(*) from recent),\n  'pro_tag_durchschnitt',  (select round(count(*)::numeric / $1::int, 2) from recent),\n  'haeufigste_kategorie',  (select category from by_category order by anzahl desc, category limit 1),\n  'nach_kategorie',        coalesce((select json_object_agg(category, anzahl) from by_category), '{}'::json),\n  'nach_prioritaet',       coalesce((select json_object_agg(priority, anzahl) from by_priority), '{}'::json),\n  'nach_kategorie_und_prioritaet', coalesce((\n      select json_agg(json_build_object('category', category, 'priority', priority, 'anzahl', anzahl)\n                      order by anzahl desc, category, priority)\n      from by_category_priority), '[]'::json),\n  'pro_tag',               coalesce((select json_agg(json_build_object('tag', tag, 'anzahl', anzahl) order by tag)\n                                     from per_day), '[]'::json),\n  'klassifizierung_fehlgeschlagen', (select count(*) from recent where parse_error),\n  'tokens', json_build_object(\n      'input',  (select coalesce(sum(input_tokens), 0) from recent),\n      'output', (select coalesce(sum(output_tokens), 0) from recent))\n) as stats;",
+        "options": {
+          "queryReplacement": "={{ [ Math.min(365, Math.max(1, parseInt($json.query.days ?? '7', 10) || 7)) ] }}"
+        }
+      },
+      "name": "stats query",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        220,
+        300
+      ],
+      "id": "stats-query",
+      "credentials": {
+        "postgres": {
+          "id": "fbCredPostgres01",
+          "name": "Feedback DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.stats }}",
+        "options": {}
+      },
+      "name": "Respond 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        440,
+        300
+      ],
+      "id": "respond-200"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "stats query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "stats query": {
+      "main": [
+        [
+          {
+            "node": "Respond 200",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "errorWorkflow": "fbTriageErrors01"
+  },
+  "active": false,
+  "pinData": {},
+  "tags": []
+}

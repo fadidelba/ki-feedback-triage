@@ -1,0 +1,117 @@
+{
+  "id": "fbTriageErrors01",
+  "name": "error-handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "id": "error-trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Fehlerdaten aus dem Error Trigger in eine flache Form bringen.\nconst e = $json.execution ?? {};\nreturn [{\n  json: {\n    workflow_name: $json.workflow?.name ?? 'unbekannt',\n    node_name: e.lastNodeExecuted ?? e.error?.node?.name ?? null,\n    message: (e.error?.message ?? 'Unbekannter Fehler').slice(0, 1000),\n    execution_id: e.id ? String(e.id) : null,\n    execution_url: e.url ?? null,\n  },\n}];\n"
+      },
+      "name": "format_error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ],
+      "id": "format-error"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "insert into workflow_errors (workflow_name, node_name, message, execution_id, execution_url)\nvalues ($1, $2, $3, $4, $5);",
+        "options": {
+          "queryReplacement": "={{ [ $json.workflow_name, $json.node_name, $json.message, $json.execution_id, $json.execution_url ] }}"
+        }
+      },
+      "name": "log error",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        440,
+        200
+      ],
+      "id": "log-error",
+      "credentials": {
+        "postgres": {
+          "id": "fbCredPostgres01",
+          "name": "Feedback DB"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "chatId": "__TELEGRAM_CHAT_ID__",
+        "text": "=Fehler im Workflow {{ $('format_error').first().json.workflow_name }} (Node: {{ $('format_error').first().json.node_name }}):\n{{ $('format_error').first().json.message }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Telegram error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        400
+      ],
+      "id": "telegram-error",
+      "credentials": {
+        "telegramApi": {
+          "id": "fbCredTelegram01",
+          "name": "Telegram Bot"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "format_error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "format_error": {
+      "main": [
+        [
+          {
+            "node": "log error",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Telegram error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "active": false,
+  "pinData": {},
+  "tags": []
+}
