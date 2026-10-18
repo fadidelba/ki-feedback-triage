@@ -75,7 +75,10 @@
           "name": "Telegram Bot"
         }
       },
-      "onError": "continueRegularOutput"
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
     }
   ],
   "connections": {
