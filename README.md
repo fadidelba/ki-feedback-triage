@@ -4,7 +4,7 @@ Feedback aus Apps per Webhook annehmen, mit Claude klassifizieren, einen Antwort
 
 [![Workflow feedback-intake in n8n](docs/screenshots/01-workflow-intake.png)](docs/demo.mp4)
 
-**▶ [Demo-Video (2:17)](docs/demo.mp4):** Feedback per Webhook → Ausführung in n8n → Claude-Antwort und Validierung → Zeile in PostgreSQL → Telegram-Alarm → Statistik-Endpunkt → Fehlerfall mit Error-Workflow.
+**▶ [Demo-Video (1:16)](docs/demo.mp4):** das Problem, die Pipeline Schritt für Schritt, der Telegram-Alarm, der echte n8n-Workflow, der Stresstest und das Reporting.
 
 ## Warum
 
@@ -177,6 +177,7 @@ examples/    sample-payloads.json
 scripts/     setup.sh, run-tests.sh, bridge.sh
 bridge/      claude-bridge.mjs (Messages-API-kompatible Bridge zu Claude Code, ohne Abhängigkeiten)
 docs/        test-results.md, screenshots/, demo.mp4
+video/       Quellcode des Demo-Videos (Remotion/React), npm run render
 ```
 
 Geheimnisse stehen nur in `.env` (per `.gitignore` ausgeschlossen) und verschlüsselt in n8n. Die Workflow-Dateien enthalten nur Credential-IDs und -Namen.
@@ -187,3 +188,7 @@ Geheimnisse stehen nur in `.env` (per `.gitignore` ausgeschlossen) und verschlü
 - **Echte App-Anbindung:** Feedback-Formular in meinen iOS-Apps, das per `URLSession` an den Webhook sendet. Dafür muss n8n öffentlich erreichbar sein (Tunnel oder n8n Cloud).
 - **Eval-Set:** Ein Set von 50 echten, anonymisierten Feedbacks mit Soll-Labels, um Prompt-Änderungen messbar zu machen statt nach Gefühl.
 - **Deduplizierung:** Gleiche Absturzmeldungen bündeln, statt zehnmal zu alarmieren.
+
+---
+
+Demo-Video gebaut mit [Remotion](https://www.remotion.dev). Musik: „Bulletin World“ von Out To The World, Soundeffekte: Epidemic Sound. Die Audiodateien liegen nicht im Repo.
