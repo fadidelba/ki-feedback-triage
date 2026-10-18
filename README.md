@@ -2,9 +2,11 @@
 
 Feedback aus Apps per Webhook annehmen, mit Claude klassifizieren, einen Antwortentwurf schreiben lassen, in PostgreSQL speichern und bei kritischen Fällen sofort per Telegram alarmieren. Gebaut mit n8n, der Claude API und PostgreSQL.
 
-[![Workflow feedback-intake in n8n](docs/screenshots/01-workflow-intake.png)](docs/demo.mp4)
+https://github.com/user-attachments/assets/240fd172-5331-4ff3-b9cc-a75d29230d32
 
-**▶ [Demo-Video (1:16)](docs/demo.mp4):** das Problem, die Pipeline Schritt für Schritt, der Telegram-Alarm, der echte n8n-Workflow, der Stresstest und das Reporting.
+**▶ Demo-Video (1:16):** das Problem, die Pipeline Schritt für Schritt, der Telegram-Alarm, der echte n8n-Workflow, der Stresstest und das Reporting. Zum Herunterladen: [docs/demo.mp4](https://github.com/fadidelba/ki-feedback-triage/raw/main/docs/demo.mp4).
+
+![Workflow feedback-intake in n8n](docs/screenshots/01-workflow-intake.png)
 
 ## Warum
 
